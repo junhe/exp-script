@@ -43,10 +43,14 @@ def download(version, clustersuffix):
     print "downloading...", tarball
     with cd("/users/jhe/Home2/tars"):
         # download
+        suffolder = ""
+        if 'rc' in version:
+            suffolder = 'testing/'
+
         ret = subprocess.call(
             ['wget',
              '-N',
-             'https://www.kernel.org/pub/linux/kernel/v3.x/'
+             'https://www.kernel.org/pub/linux/kernel/v3.x/'+suffolder
               + tarball,
              '--no-check-certificate'])
         if ret != 0:
@@ -284,9 +288,16 @@ def get_releasename(version):
     return version+'jun'
 
 def get_tar_version(version):
-    version_nums = version.split('.')
+    if '-' in version:
+        nums,suf = version.split('-')
+    else:
+        nums = version
+        suf = ""
+    version_nums = nums.split('.')
     if version_nums[-1] == '0':
         tar_version = '.'.join( version_nums[0:2] )
+        if suf != "":
+            tar_version = '-'.join( [tar_version, suf] )
     else:
         tar_version = version
     return tar_version
@@ -334,3 +345,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    #print get_tar_version(sys.argv[1])
