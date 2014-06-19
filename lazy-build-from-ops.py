@@ -34,6 +34,45 @@ def generate_node_names(prefix, suffix, nodestr):
 
     return nlist
 
+def distribute_images(nodelist, clustersuffix):
+    # copy to h0 first
+    cmd = ['ssh', 'h0.'+clustersuffix,
+           'bash', '-c',
+           '"rsync -a --ignore-existing ' +
+           '/users/jhe/Home2/tars/imgs-3.0.0/* /mnt/scratch-sda4/"']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at scp tar.gz'
+        exit(1)
+
+    # everybody else pull the images
+    nlist = get_node_list(nodelist)
+    nlist[:] = [ str(x) for x in nlist if x != 0 ]
+    nlist = ','.join(nlist)
+
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nlist, '.'+clustersuffix,
+            'rsync -a --ignore-existing h0.'+clustersuffix+':/mnt/scratch-sda4/h*marmot*.tar.gz '+
+            '/mnt/scratch-sda4/',
+            'sync']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at pull images'
+        exit(1)   
+
+    # untar
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'cd /mnt/scratch-sda4/ && ' +
+            'ls h*marmot*.tar.gz | xargs -I% tar xvf %',
+            'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at untar image'
+        exit(1)   
 
 
 
@@ -43,6 +82,12 @@ def download(version, clustersuffix):
     print "downloading...", tarball
     with cd("/users/jhe/Home2/tars"):
         # download
+        ver_items = version.split('.')
+        if ver_items[0] == 3:
+            ver_dir = 'v3.x/'
+        elif ver_items[0] == '2' and ver_items[1] == '6':
+            ver_dir = 'v2.6/'
+
         suffolder = ""
         if 'rc' in version:
             suffolder = 'testing/'
@@ -50,7 +95,8 @@ def download(version, clustersuffix):
         ret = subprocess.call(
             ['wget',
              '-N',
-             'https://www.kernel.org/pub/linux/kernel/v3.x/'+suffolder
+             'https://www.kernel.org/pub/linux/kernel/'+
+              ver_dir + suffolder
               + tarball,
              '--no-check-certificate'])
         if ret != 0:
@@ -74,6 +120,7 @@ def download(version, clustersuffix):
         if ret != 0:
             print 'error at tar'
             exit(1)
+
 
 def make_oldconfig(version, clustersuffix):
     tar_version = get_tar_version(version)
@@ -241,7 +288,7 @@ def run_exp(version, nodelist, clustersuffix, arg_usefinished):
     cmd = ['ssh', 'h0.'+clustersuffix,
            'bash', '-c',
            '"cd /users/jhe/workdir/metawalker/src && ' +
-           'python start_jobmaster.py agga.'+version+'.txt ' +
+           'python start_jobmaster.py agga.fixedimg-'+version+'.txt ' +
            arg_usefinished + '"']
     print cmd
     proc = subprocess.Popen(cmd)
@@ -295,7 +342,9 @@ def get_tar_version(version):
         suf = ""
     version_nums = nums.split('.')
     if version_nums[-1] == '0':
-        tar_version = '.'.join( version_nums[0:2] )
+        # delete tailing 0
+        del version_nums[-1]
+        tar_version = '.'.join( version_nums )
         if suf != "":
             tar_version = '-'.join( [tar_version, suf] )
     else:
@@ -308,7 +357,11 @@ def main():
         print "Usage:", argv[0], \
              'version nodelist clustersuffix usefinished|notusefinished funclist'
         print 'example:', argv[0], \
-             "3.0.0 0-7 noloop.plfs notusefinished download,make_oldconfig,make_kernel,tar_src,pull_src_tar,untar_src,install_kernel,set_default_kernel,reboot,wait_for_alive,check_current_version,clean,run_exp"
+             "3.0.0 0-7 noloop.plfs notusefinished " \
+             "distribute_images,download,make_oldconfig," \
+             "make_kernel,tar_src,pull_src_tar,untar_src,install_kernel," \
+             "set_default_kernel,reboot,wait_for_alive,check_current_version," \
+             "clean,run_exp"
         exit(1)
     version    =argv[1]
     nodelist   =argv[2]
@@ -316,6 +369,8 @@ def main():
     arg_usefinished = argv[4]
     funclist = argv[5].split(',')
 
+    if 'distribute_images' in funclist:
+        distribute_images(nodelist, clustersuffix)
     if 'download' in funclist:
         download(version, clustersuffix)
     if 'make_oldconfig' in funclist:
