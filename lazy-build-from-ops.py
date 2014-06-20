@@ -233,6 +233,7 @@ def set_default_kernel(version, nodelist, clustersuffix):
         print 'error at set_default_kernel'
         exit(1)
 
+
 def reboot(nodelist, clustersuffix):
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nodelist, '.'+clustersuffix,
@@ -263,6 +264,27 @@ def wait_for_alive(nodelist, clustersuffix):
         if goodcnt == len(nodelist):
             break
         time.sleep(1)
+
+def never_writeback(nodelist, clustersuffix):
+    file1 = '/proc/sys/vm/dirty_writeback_centisecs'
+    file2 = '/proc/sys/vm/dirty_expire_centisecs'
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'echo 9999999 | sudo tee '+file1, 'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at writing file1'
+        exit(1)
+
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'echo 9999999 | sudo tee '+file2, 'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at writing file2'
+        exit(1)
 
 def check_current_version(nodelist, clustersuffix):
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
@@ -360,7 +382,7 @@ def main():
              "3.0.0 0-7 noloop.plfs notusefinished " \
              "distribute_images,download,make_oldconfig," \
              "make_kernel,tar_src,pull_src_tar,untar_src,install_kernel," \
-             "set_default_kernel,reboot,wait_for_alive,check_current_version," \
+             "set_default_kernel,reboot,wait_for_alive,never_writeback,check_current_version," \
              "clean,run_exp"
         exit(1)
     version    =argv[1]
@@ -391,6 +413,8 @@ def main():
         reboot(nodelist, clustersuffix)
     if 'wait_for_alive' in funclist:
         wait_for_alive(nodelist, clustersuffix)
+    if 'never_writeback' in funclist:
+        never_writeback(nodelist, clustersuffix)
     if 'check_current_version' in funclist:
         check_current_version(nodelist, clustersuffix)
     if 'clean' in funclist:
