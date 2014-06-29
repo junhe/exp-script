@@ -83,10 +83,13 @@ def download(version, clustersuffix):
     with cd("/users/jhe/Home2/tars"):
         # download
         ver_items = version.split('.')
-        if ver_items[0] == 3:
+        ver_dir = ""
+        if ver_items[0] == '3':
             ver_dir = 'v3.x/'
         elif ver_items[0] == '2' and ver_items[1] == '6':
             ver_dir = 'v2.6/'
+        else:
+            print version, 'is not supported'
 
         suffolder = ""
         if 'rc' in version:
@@ -96,7 +99,7 @@ def download(version, clustersuffix):
             ['wget',
              '-N',
              'https://www.kernel.org/pub/linux/kernel/'+
-              ver_dir + suffolder
+              ver_dir + suffolder 
               + tarball,
              '--no-check-certificate'])
         if ret != 0:
@@ -306,12 +309,12 @@ def clean(nodelist, clustersuffix):
         print 'error at clean'
         exit(1)
 
-def run_exp(version, nodelist, clustersuffix, arg_usefinished):
+def run_exp(version, jobtag, nodelist, clustersuffix, arg_usefinished):
     cmd = ['ssh', 'h0.'+clustersuffix,
            'bash', '-c',
            '"cd /users/jhe/workdir/metawalker/src && ' +
            'python start_jobmaster.py agga.fixedimg-'+version+'.txt ' +
-           arg_usefinished + '"']
+           jobtag + " " + arg_usefinished + '"']
     print cmd
     proc = subprocess.Popen(cmd)
 
@@ -375,21 +378,22 @@ def get_tar_version(version):
 
 def main():
     argv = sys.argv
-    if len(argv) != 6:
+    if len(argv) != 7:
         print "Usage:", argv[0], \
-             'version nodelist clustersuffix usefinished|notusefinished funclist'
+             'version jobtag nodelist clustersuffix usefinished|notusefinished funclist'
         print 'example:', argv[0], \
-             "3.0.0 0-7 noloop.plfs notusefinished " \
+             "3.0.0 tag01 0-7 noloop.plfs notusefinished " \
              "distribute_images,download,make_oldconfig," \
              "make_kernel,tar_src,pull_src_tar,untar_src,install_kernel," \
              "set_default_kernel,reboot,wait_for_alive,never_writeback,check_current_version," \
              "clean,run_exp"
         exit(1)
     version    =argv[1]
-    nodelist   =argv[2]
-    clustersuffix =argv[3]
-    arg_usefinished = argv[4]
-    funclist = argv[5].split(',')
+    jobtag = argv[2]
+    nodelist   =argv[3]
+    clustersuffix =argv[4]
+    arg_usefinished = argv[5]
+    funclist = argv[6].split(',')
 
     if 'distribute_images' in funclist:
         distribute_images(nodelist, clustersuffix)
@@ -420,7 +424,7 @@ def main():
     if 'clean' in funclist:
         clean(nodelist, clustersuffix)
     if 'run_exp' in funclist:
-        run_exp(version, nodelist, clustersuffix, arg_usefinished)
+        run_exp(version, jobtag, nodelist, clustersuffix, arg_usefinished)
 
 if __name__ == '__main__':
     main()
