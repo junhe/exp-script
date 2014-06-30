@@ -68,12 +68,12 @@ def download(version, clustersuffix, node):
         ret = subprocess.call(
             ['scp', 
              '/users/jhe/Home2/tars/'+tarball,
-             node+'.'+clustersuffix+':/mnt/scratch-sda4/'])
+             'h'+node+'.'+clustersuffix+':/mnt/scratch-sda4/'])
         if ret != 0:
             print 'error at scp'
             exit(1)
         # untar at the node
-        cmd = ['ssh', node+'.'+clustersuffix,
+        cmd = ['ssh', 'h'+node+'.'+clustersuffix,
              'bash', '-c', 
              '"cd /mnt/scratch-sda4/ && pwd && tar -xf '
                +tarball+'"']
@@ -86,7 +86,7 @@ def download(version, clustersuffix, node):
 
 def make_oldconfig(version, clustersuffix, node):
     tar_version = get_tar_version(version)
-    cmd = ['ssh', node+'.'+clustersuffix,
+    cmd = ['ssh', 'h'+node+'.'+clustersuffix,
            'bash', '-c',
            '"cd /mnt/scratch-sda4/linux-'+tar_version+
            ' rm -f .config* && cp -v ~/Home2/tars/.config-3.0-jun.loop.nfs .config && ' +
@@ -99,7 +99,7 @@ def make_oldconfig(version, clustersuffix, node):
 
 def make_kernel(version, clustersuffix, node):
     tar_version = get_tar_version(version)
-    cmd = ['ssh', node+'.'+clustersuffix,
+    cmd = ['ssh', 'h0'+node+'.'+clustersuffix,
            'bash', '-c',
            '"cd /mnt/scratch-sda4/linux-'+tar_version+
            '&& make -j3"']
@@ -109,6 +109,50 @@ def make_kernel(version, clustersuffix, node):
     if ret != 0:
         print 'error at make_kernel'
         exit(1)
+
+def install_kernel(version, nodelist, clustersuffix):
+    tar_version = get_tar_version(version)
+    releasename = get_releasename(version)
+    srcdir = '/mnt/scratch-sda4/linux-'+tar_version
+
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'cd '+srcdir+' && '+
+            'sudo make modules_install && '+
+            'sudo make install',
+            'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at install_kernel'
+        exit(1)
+            
+def set_default_kernel(version, nodelist, clustersuffix):
+    tar_version = get_tar_version(version)
+    releasename = get_releasename(version)
+
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            "sudo python /users/jhe/bin/set-default-kernel.py "+
+                releasename,
+            'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at set_default_kernel'
+        exit(1)
+
+
+def reboot(nodelist, clustersuffix):
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'sudo reboot', 'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at reboot'
+        exit(1)
+
 
 def wait_for_alive(nodelist, clustersuffix):
     nodelist = generate_node_names('h',
@@ -130,6 +174,27 @@ def wait_for_alive(nodelist, clustersuffix):
         if goodcnt == len(nodelist):
             break
         time.sleep(1)
+
+def never_writeback(nodelist, clustersuffix):
+    file1 = '/proc/sys/vm/dirty_writeback_centisecs'
+    file2 = '/proc/sys/vm/dirty_expire_centisecs'
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'echo 9999999 | sudo tee '+file1, 'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at writing file1'
+        exit(1)
+
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'echo 9999999 | sudo tee '+file2, 'async']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at writing file2'
+        exit(1)
 
 def check_current_version(nodelist, clustersuffix):
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
@@ -196,11 +261,14 @@ def main():
         print 'example:', argv[0], \
              "3.0.0 0 noloop.plfs " \
              "download,make_oldconfig," \
-             "make_kernel"
+             "make_kernel,install_kernel," \
+             "set_default_kernel,reboot,wait_for_alive,never_writeback,check_current_version," \
+             "clean"
         print "note that it only supports one node"
         exit(1)
     version    =argv[1]
     node       =argv[2]
+    nodelist = node
     clustersuffix =argv[3]
     funclist = argv[4].split(',')
 
@@ -211,6 +279,20 @@ def main():
         make_oldconfig(version, clustersuffix, node)
     if 'make_kernel' in funclist:
         make_kernel(version, clustersuffix, node)
+    if 'install_kernel' in funclist:
+        install_kernel(version, nodelist, clustersuffix)
+    if 'set_default_kernel' in funclist:
+        set_default_kernel(version, nodelist, clustersuffix)
+    if 'reboot' in funclist:
+        reboot(nodelist, clustersuffix)
+    if 'wait_for_alive' in funclist:
+        wait_for_alive(nodelist, clustersuffix)
+    if 'never_writeback' in funclist:
+        never_writeback(nodelist, clustersuffix)
+    if 'check_current_version' in funclist:
+        check_current_version(nodelist, clustersuffix)
+    if 'clean' in funclist:
+        clean(nodelist, clustersuffix)
 
 if __name__ == '__main__':
     main()
