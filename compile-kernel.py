@@ -99,7 +99,7 @@ def make_oldconfig(version, clustersuffix, node):
 
 def make_kernel(version, clustersuffix, node):
     tar_version = get_tar_version(version)
-    cmd = ['ssh', 'h0'+node+'.'+clustersuffix,
+    cmd = ['ssh', 'h'+node+'.'+clustersuffix,
            'bash', '-c',
            '"cd /mnt/scratch-sda4/linux-'+tar_version+
            '&& make -j3"']
