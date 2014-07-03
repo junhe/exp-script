@@ -125,6 +125,32 @@ def download(version, clustersuffix):
             exit(1)
 
 
+def patch(patches, version, clustersuffix):
+    tar_version = get_tar_version(version)
+    srcdir = 'linux-'+tar_version
+
+    patches = patches.split(',')
+    # copy to h0
+    for patch in patches:
+        cmd = ['scp', '/users/jhe/Home2/patches/'+patch,
+                'h0.'+clustersuffix+':/mnt/scratch-sda4/']
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            print 'failed to copy patch'
+            exit(1)
+
+    # apply the patches
+    for patch in patches:
+        cmd = ['ssh', 'h0.'+clustersuffix,
+               'bash', '-c',
+               '"cd /mnt/scratch-sda4/'+srcdir
+               + ' && patch -p1 < ../' + patch +'"']
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            print 'failed to apply patch'
+            exit(1)
+
+
 def make_oldconfig(version, clustersuffix):
     tar_version = get_tar_version(version)
     cmd = ['ssh', 'h0.'+clustersuffix,
@@ -378,27 +404,30 @@ def get_tar_version(version):
 
 def main():
     argv = sys.argv
-    if len(argv) != 7:
+    if len(argv) != 8:
         print "Usage:", argv[0], \
-             'version jobtag nodelist clustersuffix usefinished|notusefinished funclist'
+             'version patches jobtag nodelist clustersuffix usefinished|notusefinished funclist'
         print 'example:', argv[0], \
-             "3.0.0 tag01 0-7 noloop.plfs notusefinished " \
-             "distribute_images,download,make_oldconfig," \
+             "3.0.0 patch1.patch,patch2.patch tag01 0-7 noloop.plfs notusefinished " \
+             "distribute_images,download,patch,make_oldconfig," \
              "make_kernel,tar_src,pull_src_tar,untar_src,install_kernel," \
              "set_default_kernel,reboot,wait_for_alive,never_writeback,check_current_version," \
              "clean,run_exp"
         exit(1)
     version    =argv[1]
-    jobtag = argv[2]
-    nodelist   =argv[3]
-    clustersuffix =argv[4]
-    arg_usefinished = argv[5]
-    funclist = argv[6].split(',')
+    patches    =argv[2]
+    jobtag = argv[3]
+    nodelist   =argv[4]
+    clustersuffix =argv[5]
+    arg_usefinished = argv[6]
+    funclist = argv[7].split(',')
 
     if 'distribute_images' in funclist:
         distribute_images(nodelist, clustersuffix)
     if 'download' in funclist:
         download(version, clustersuffix)
+    if 'patch' in funclist:
+        patch(patches, version, clustersuffix)
     if 'make_oldconfig' in funclist:
         make_oldconfig(version, clustersuffix)
     if 'make_kernel' in funclist:
