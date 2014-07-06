@@ -129,6 +129,9 @@ def patch(patches, version, clustersuffix):
     tar_version = get_tar_version(version)
     srcdir = 'linux-'+tar_version
 
+    if patches.lower() == 'nopatches':
+        return
+
     patches = patches.split(',')
     # copy to h0
     for patch in patches:
