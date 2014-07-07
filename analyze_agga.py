@@ -143,6 +143,9 @@ def main():
                         print machine, 'needs to install R first'
                         time.sleep(2)
                         install_R(machine)
+                    else:
+                        print 'ready to run, do not need installing R'
+                        time.sleep(2)
                     machineproc[machine] = run_R(jobfile, machine)
                     assigned = True
                     break
