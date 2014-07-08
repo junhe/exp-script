@@ -54,7 +54,7 @@ def assign_job(clusters, testlist):
         clustersuffix = clusters[clusteri]
         print '************** Cluster', clustersuffix
         clustertests = testlist[clusteri:clusteri+avgtests]
-        script = gen_shell_script(clustersuffix, clustertests)
+        script = gen_shell_script(clustersuffix, clustertests, do_dist_img=True)
         print script
             
 
@@ -114,16 +114,20 @@ def gen_plot_strings(testlist):
 
 def main():
     commitlist = load_commits()
-    testlist = test_what(0, len(commitlist)-1, commitlist, 5) 
+    testlist = test_what(0, len(commitlist)-1, commitlist, 9) 
     pprint.pprint(testlist)
-    #assign_job([
-        #'noloop002.plfs',
-        #'noloop003.plfs',
-        #'noloop004.plfs',
-        #'noloop005.plfs'
-        #], testlist, do_dist_img)
+    assign_job([
+        'noloop002.plfs',
+        'noloop003.plfs',
+        'noloop004.plfs',
+        'noloop005.plfs',
+        'noloop006.plfs',
+        'noloop007.plfs',
+        'noloop008.plfs',
+        'noloop009.plfs',
+        ], testlist)
     #print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
-    print gen_plot_strings(testlist)
+    #print gen_plot_strings(testlist)
 
 
 if __name__ == '__main__':

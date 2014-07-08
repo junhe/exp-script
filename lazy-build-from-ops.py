@@ -53,7 +53,8 @@ def distribute_images(nodelist, clustersuffix):
 
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nlist, '.'+clustersuffix,
-            'rsync -a --ignore-existing h0.'+clustersuffix+':/mnt/scratch-sda4/h*marmot*.tar.gz '+
+            'rsync -a --ignore-existing h0.'+clustersuffix \
+            +':/mnt/scratch-sda4/h*marmot*.tar.gz '+
             '/mnt/scratch-sda4/',
             'sync']
     print cmd
@@ -84,17 +85,18 @@ def download(version, clustersuffix):
 def download_git(version, clustersuffix):
     tarball = 'linux.tar.gz'
     # scp
-    ret = subprocess.call(
-        ['scp', 
+    cmd = ['rsync', '-a', '--ignore-existing',
          '/users/jhe/Home2/tars/'+tarball,
-         'h0.'+clustersuffix+':/mnt/scratch-sda4/'])
+         'h0.'+clustersuffix+':/mnt/scratch-sda4/']
+    print cmd
+    ret = subprocess.call(cmd)
     if ret != 0:
         print 'error at scp git linux'
         exit(1)
     # untar at h0
     cmd = ['ssh', 'h0.'+clustersuffix,
          'bash', '-c', 
-         '"cd /mnt/scratch-sda4/ && pwd && tar -xf '
+         '"cd /mnt/scratch-sda4/ && rm -rf linux && tar -xf '
            +tarball+'"']
     print cmd
     ret = subprocess.call(cmd)
