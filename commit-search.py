@@ -113,10 +113,12 @@ def gen_plot_strings(testlist):
     print '################ cmd for download'
     ssh_str = "scp jhe@marmot-ops.pdl.cmu.edu:"\
                 "./workdir/sensitivity-analysis/{rdatafile} "\
-                "/Users/junhe/workdir/curstage/analysis-scripts/datafiles"
+                "/Users/junhe/workdir/curstage/analysis-scripts/datafiles && "
+    downloadstr = ""
     for file in files:
         cmd = ssh_str.format(rdatafile=file)
-        print cmd
+        downloadstr += cmd
+    print downloadstr
 
     files4r = '",\n"'.join(files)
     files4r = '"'+files4r+'"'
@@ -126,9 +128,10 @@ def gen_plot_strings(testlist):
 
 def main():
     commitlist = load_commits()
-    testlist = test_what(0, len(commitlist)-1, commitlist, 9) 
+    testlist = test_what(126, len(commitlist)-1, commitlist, 9) 
     pprint.pprint(testlist)
     #assign_job([
+        #'noloop001.plfs',
         #'noloop002.plfs',
         #'noloop003.plfs',
         #'noloop004.plfs',
@@ -136,9 +139,8 @@ def main():
         #'noloop006.plfs',
         #'noloop007.plfs',
         #'noloop008.plfs',
-        #'noloop009.plfs',
         #], testlist)
-    print gen_agga_check_cmd(testlist)
+    #print gen_agga_check_cmd(testlist)
     #print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
     #print gen_plot_strings(testlist)
 
