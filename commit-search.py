@@ -93,6 +93,17 @@ def gen_analysis_cmd(nodestr, clustersuffix, testlist):
                           clustersuffix=clustersuffix)
     return cmd
 
+def gen_agga_check_cmd(testlist):
+    "nodestr example: 0-7"
+    base_str = "cd ~/workdir/metawalker/src/ && wc -l {aggafiles} && cd -"
+    fileprefix = "agga.fixedimg-git.txt-"
+    files = [fileprefix+test['commithash'] for test in testlist]
+    files = ' '.join(files)
+
+    cmd = base_str.format(aggafiles=files)
+    return cmd
+
+
 def gen_plot_strings(testlist):
     "nodestr example: 0-7"
     base_str = "ext4.1.auto-fixedimage-agga.fixedimg-git.txt-{commithash}.Rdata"
@@ -117,16 +128,17 @@ def main():
     commitlist = load_commits()
     testlist = test_what(0, len(commitlist)-1, commitlist, 9) 
     pprint.pprint(testlist)
-    assign_job([
-        'noloop002.plfs',
-        'noloop003.plfs',
-        'noloop004.plfs',
-        'noloop005.plfs',
-        'noloop006.plfs',
-        'noloop007.plfs',
-        'noloop008.plfs',
-        'noloop009.plfs',
-        ], testlist)
+    #assign_job([
+        #'noloop002.plfs',
+        #'noloop003.plfs',
+        #'noloop004.plfs',
+        #'noloop005.plfs',
+        #'noloop006.plfs',
+        #'noloop007.plfs',
+        #'noloop008.plfs',
+        #'noloop009.plfs',
+        #], testlist)
+    print gen_agga_check_cmd(testlist)
     #print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
     #print gen_plot_strings(testlist)
 
