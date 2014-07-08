@@ -55,7 +55,7 @@ def assign_job(clusters, testlist):
         print '************** Cluster', clustersuffix
         thisstart = clusteri * avgtests
         clustertests = testlist[thisstart:thisstart+avgtests]
-        script = gen_shell_script(clustersuffix, clustertests, do_dist_img=True)
+        script = gen_shell_script(clustersuffix, clustertests, do_dist_img=False)
         print script
             
 
@@ -76,7 +76,7 @@ def gen_shell_script(clustersuffix, testlist, do_dist_img):
         mystr = base_str.format(commit         =commit,
                                 clustersuffix  =clustersuffix,
                                 distr_image    =distr_image)
-        script += mystr + '\n'
+        script += mystr + '; '
 
     return script
 
