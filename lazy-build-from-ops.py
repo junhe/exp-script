@@ -38,7 +38,7 @@ def distribute_images(nodelist, clustersuffix):
     # copy to h0 first
     cmd = ['ssh', 'h0.'+clustersuffix,
            'bash', '-c',
-           '"rsync -a --ignore-existing ' +
+           '"rsync -a ' +
            '/users/jhe/Home2/tars/imgs-3.0.0/* /mnt/scratch-sda4/"']
     print cmd
     ret = subprocess.call(cmd)
@@ -53,7 +53,7 @@ def distribute_images(nodelist, clustersuffix):
 
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nlist, '.'+clustersuffix,
-            'rsync -a --ignore-existing h0.'+clustersuffix \
+            'rsync -a h0.'+clustersuffix \
             +':/mnt/scratch-sda4/h*marmot*.tar.gz '+
             '/mnt/scratch-sda4/',
             'sync']
@@ -85,7 +85,7 @@ def download(version, clustersuffix):
 def download_git(version, clustersuffix):
     tarball = 'linux.tar.gz'
     # scp
-    cmd = ['rsync', '-a', '--ignore-existing',
+    cmd = ['rsync', '-a', 
          '/users/jhe/Home2/tars/'+tarball,
          'h0.'+clustersuffix+':/mnt/scratch-sda4/']
     print cmd
