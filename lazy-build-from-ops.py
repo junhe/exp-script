@@ -75,8 +75,35 @@ def distribute_images(nodelist, clustersuffix):
         exit(1)   
 
 
-
 def download(version, clustersuffix):
+    if version == 'git':
+        download_git(version, clustersuffix)
+    else:
+        download_nongit(version, clustersuffix)
+
+def download_git(version, clustersuffix):
+    tarball = 'linux.tar.gz'
+    # scp
+    ret = subprocess.call(
+        ['scp', 
+         '/users/jhe/Home2/tars/'+tarball,
+         'h0.'+clustersuffix+':/mnt/scratch-sda4/'])
+    if ret != 0:
+        print 'error at scp git linux'
+        exit(1)
+    # untar at h0
+    cmd = ['ssh', 'h0.'+clustersuffix,
+         'bash', '-c', 
+         '"cd /mnt/scratch-sda4/ && pwd && tar -xf '
+           +tarball+'"']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at tar'
+        exit(1)
+
+
+def download_nongit(version, clustersuffix):
     tar_version = get_tar_version(version)
     tarball = 'linux-'+tar_version+'.tar.gz'
     print "downloading...", tarball
@@ -124,10 +151,28 @@ def download(version, clustersuffix):
             print 'error at tar'
             exit(1)
 
+def checkout(jobtag, version, clustersuffix):
+    "jobtag is reused as commit hash in git mode"
+    if version != 'git':
+        print 'you have to be in git mode in order to use checkout'
+        exit(1)
+
+    cmd = ['ssh', 'h0.'+clustersuffix,
+            'bash', '-c',
+            '"cd /mnt/scratch-sda4/linux && ' 
+            + 'git checkout ' + jobtag + '"']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at checkout'
+        exit(1)
 
 def patch(patches, version, clustersuffix):
     tar_version = get_tar_version(version)
-    srcdir = 'linux-'+tar_version
+    if version == 'git':
+        srcdir = 'linux'
+    else:
+        srcdir = 'linux-'+tar_version
 
     if patches.lower() == 'nopatches':
         return
@@ -156,9 +201,15 @@ def patch(patches, version, clustersuffix):
 
 def make_oldconfig(version, clustersuffix):
     tar_version = get_tar_version(version)
+
+    if version == 'git':
+        srcdir = 'linux'
+    else:
+        srcdir = 'linux-'+tar_version
+
     cmd = ['ssh', 'h0.'+clustersuffix,
            'bash', '-c',
-           '"cd /mnt/scratch-sda4/linux-'+tar_version+
+           '"cd /mnt/scratch-sda4/' + srcdir +
            ' rm -f .config* && cp -v ~/Home2/tars/.config-3.0-jun.loop.nfs .config && ' +
            ' yes \'\' |make oldconfig "']
     print cmd
@@ -169,10 +220,16 @@ def make_oldconfig(version, clustersuffix):
 
 def make_kernel(version, clustersuffix):
     tar_version = get_tar_version(version)
+
+    if version == 'git':
+        srcdir = 'linux'
+    else:
+        srcdir = 'linux-'+tar_version
+
     cmd = ['ssh', 'h0.'+clustersuffix,
            'bash', '-c',
-           '"cd /mnt/scratch-sda4/linux-'+tar_version+
-           '&& make -j3"']
+           '"cd /mnt/scratch-sda4/'+srcdir+
+           ' && make -j3"']
     print cmd
     print 'hello'
     ret = subprocess.call(cmd)
@@ -181,22 +238,36 @@ def make_kernel(version, clustersuffix):
         exit(1)
 
 
-def tar_src(version, clustersuffix):
+def tar_src(jobtag, version, clustersuffix):
     tar_version = get_tar_version(version)
-    releasename = get_releasename(version)
+
+    if version == 'git':
+        srcdir = 'linux'
+        releasename = jobtag
+    else:
+        srcdir = 'linux-'+tar_version
+        releasename = get_releasename(version)
+
     cmd = ['ssh', 'h0.'+clustersuffix,
            'bash', '-c',
            '"cd /mnt/scratch-sda4/ && '
-           'tar -cf linux-'+releasename+'.tar.gz linux-'+tar_version+'"']
+           'tar -cf linux-'+releasename+'.tar.gz '+srcdir+'"']
     print cmd
     ret = subprocess.call(cmd)
     if ret != 0:
         print 'error at tar_src'
         exit(1)
 
-def pull_src_tar(version, nodelist, clustersuffix):
+def pull_src_tar(jobtag, version, nodelist, clustersuffix):
     tar_version = get_tar_version(version)
-    releasename = get_releasename(version)
+
+    if version == 'git':
+        srcdir = 'linux'
+        releasename = jobtag
+    else:
+        srcdir = 'linux-'+tar_version
+        releasename = get_releasename(version)
+
     nlist = get_node_list(nodelist)
     nlist[:] = [ str(x) for x in nlist if x != 0 ]
     nlist = ','.join(nlist)
@@ -214,10 +285,17 @@ def pull_src_tar(version, nodelist, clustersuffix):
     if ret != 0:
         print 'error at pull_src_tar'
         exit(1)
-           
-def untar_src(version, nodelist, clustersuffix):    
+               
+def untar_src(jobtag, version, nodelist, clustersuffix):    
     tar_version = get_tar_version(version)
-    releasename = get_releasename(version)
+
+    if version == 'git':
+        srcdir = 'linux'
+        releasename = jobtag
+    else:
+        srcdir = 'linux-'+tar_version
+        releasename = get_releasename(version)
+
     nlist = get_node_list(nodelist)
     nlist[:] = [ str(x) for x in nlist if x != 0 ]
     nlist = ','.join(nlist)
@@ -225,6 +303,7 @@ def untar_src(version, nodelist, clustersuffix):
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nlist, '.'+clustersuffix,
             "cd /mnt/scratch-sda4/ && " +
+              "rm -fr linux && " +
               "tar xf linux-"+releasename+".tar.gz",
             'async']
     print cmd
@@ -235,8 +314,12 @@ def untar_src(version, nodelist, clustersuffix):
 
 def install_kernel(version, nodelist, clustersuffix):
     tar_version = get_tar_version(version)
-    releasename = get_releasename(version)
-    srcdir = '/mnt/scratch-sda4/linux-'+tar_version
+
+    if version == 'git':
+        srcdir = 'linux'
+    else:
+        srcdir = 'linux-'+tar_version
+    srcdir = '/mnt/scratch-sda4/'+srcdir
 
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nodelist, '.'+clustersuffix,
@@ -250,9 +333,33 @@ def install_kernel(version, nodelist, clustersuffix):
         print 'error at install_kernel'
         exit(1)
             
+def get_kernelrelease(nodelist, clustersuffix):
+    nodelist = generate_node_names('h',
+                        '.'+clustersuffix,
+                        nodelist)
+    
+    releasenames = []
+    for host in nodelist:
+        cmd = ['ssh', host,
+                'bash', '-c',
+                '"cd /mnt/scratch-sda4/linux && ' +
+                'make kernelrelease"']
+        print cmd
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        proc.wait()
+        release = proc.communicate()[0]
+        release = release.strip()
+        print 'the release is', release
+        releasenames.append(release)
+    if len(set(releasenames)) != 1:
+        print 'error, we expect the release names for every machine to be same!'
+        exit(1)
+    print releasenames
+    return releasenames[0]
+
+
 def set_default_kernel(version, nodelist, clustersuffix):
-    tar_version = get_tar_version(version)
-    releasename = get_releasename(version)
+    releasename = get_kernelrelease(nodelist, clustersuffix)
 
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nodelist, '.'+clustersuffix,
@@ -389,6 +496,9 @@ def get_releasename(version):
     return version+'jun'
 
 def get_tar_version(version):
+    if version == 'git':
+        return version
+
     if '-' in version:
         nums,suf = version.split('-')
     else:
@@ -416,6 +526,14 @@ def main():
              "make_kernel,tar_src,pull_src_tar,untar_src,install_kernel," \
              "set_default_kernel,reboot,wait_for_alive,never_writeback,check_current_version," \
              "clean,run_exp"
+        print '*************'
+        print 'example 2:', argv[0], \
+             "git nopatches dh32nd82ujdjsdh328djszxxs88 0-7 noloop.plfs notusefinished " \
+             "distribute_images,download,checkout,patch,make_oldconfig," \
+             "make_kernel,tar_src,pull_src_tar,untar_src,install_kernel," \
+             "set_default_kernel,reboot,wait_for_alive,never_writeback,check_current_version," \
+             "clean,run_exp"
+
         exit(1)
     version    =argv[1]
     patches    =argv[2]
@@ -429,6 +547,8 @@ def main():
         distribute_images(nodelist, clustersuffix)
     if 'download' in funclist:
         download(version, clustersuffix)
+    if 'checkout' in funclist:
+        checkout(jobtag, version, clustersuffix)
     if 'patch' in funclist:
         patch(patches, version, clustersuffix)
     if 'make_oldconfig' in funclist:
@@ -436,11 +556,11 @@ def main():
     if 'make_kernel' in funclist:
         make_kernel(version, clustersuffix)
     if 'tar_src' in funclist:
-        tar_src(version, clustersuffix)
+        tar_src(jobtag, version, clustersuffix)
     if 'pull_src_tar' in funclist:
-        pull_src_tar(version, nodelist, clustersuffix)
+        pull_src_tar(jobtag, version, nodelist, clustersuffix)
     if 'untar_src' in funclist:
-        untar_src(version, nodelist, clustersuffix)
+        untar_src(jobtag, version, nodelist, clustersuffix)
     if 'install_kernel' in funclist:
         install_kernel(version, nodelist, clustersuffix)
     if 'set_default_kernel' in funclist:
