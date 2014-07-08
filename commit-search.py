@@ -4,7 +4,7 @@ import pprint
 
 
 def load_commits():
-    f = open('./commits-v3.5..v3.6-rc1', 'r')
+    f = open('./commits-hashonly-first-parent-v3.5..v3.6-rc1', 'r')
     commitlist = f.readlines()
     f.close()
 
@@ -55,7 +55,7 @@ def assign_job(clusters, testlist):
         print '************** Cluster', clustersuffix
         thisstart = clusteri * avgtests
         clustertests = testlist[thisstart:thisstart+avgtests]
-        script = gen_shell_script(clustersuffix, clustertests, do_dist_img=False)
+        script = gen_shell_script(clustersuffix, clustertests, do_dist_img=True)
         print script
             
 
@@ -115,7 +115,7 @@ def gen_plot_strings(testlist):
 
 def main():
     commitlist = load_commits()
-    testlist = test_what(8136, len(commitlist)-1, commitlist, 17) 
+    testlist = test_what(0, len(commitlist)-1, commitlist, 9) 
     pprint.pprint(testlist)
     assign_job([
         'noloop002.plfs',
