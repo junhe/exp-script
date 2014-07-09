@@ -1,5 +1,6 @@
 import os, sys, time
 import pprint
+import math
 
 
 
@@ -26,7 +27,8 @@ def test_what(start_index, end_index, commitlist, npartitions):
             'end_index',end_index,\
             'npartitions',npartitions
 
-    step = (end_index - start_index + 1) / npartitions
+    step = (end_index - start_index + 1) / float(npartitions)
+    step = int(math.ceil(step))
     print 'step', step
 
     pick_indices = []
@@ -128,9 +130,14 @@ def gen_plot_strings(testlist):
 
 def main():
     commitlist = load_commits()
-    testlist = test_what(0, len(commitlist)-1, commitlist, 5) 
+    #testlist = test_what(0, len(commitlist)-1, commitlist, 5) 
+    testlist = test_what(0, 25, commitlist, 9) 
     pprint.pprint(testlist)
     assign_job([
+        'noloop001.plfs',
+        'noloop002.plfs',
+        'noloop003.plfs',
+        'noloop004.plfs',
         'noloop005.plfs',
         'noloop006.plfs',
         'noloop007.plfs',
