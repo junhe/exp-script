@@ -128,20 +128,14 @@ def gen_plot_strings(testlist):
 
 def main():
     commitlist = load_commits()
-    testlist = test_what(126, len(commitlist)-1, commitlist, 9) 
+    testlist = test_what(150, 153, commitlist, 4) 
     pprint.pprint(testlist)
     #assign_job([
         #'noloop001.plfs',
         #'noloop002.plfs',
-        #'noloop003.plfs',
-        #'noloop004.plfs',
-        #'noloop005.plfs',
-        #'noloop006.plfs',
-        #'noloop007.plfs',
-        #'noloop008.plfs',
-        #], testlist)
+        #'noloop003.plfs'], testlist)
     #print gen_agga_check_cmd(testlist)
-    #print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
+    print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
     #print gen_plot_strings(testlist)
 
 
