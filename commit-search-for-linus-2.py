@@ -54,22 +54,23 @@ def assign_job(clusters, testlist):
     avgtests = ntests / nclusters
     for clusteri in range(nclusters):
         clustersuffix = clusters[clusteri]
-        print '************** Cluster', clustersuffix
+        print '############ Cluster', clustersuffix
         thisstart = clusteri * avgtests
         clustertests = testlist[thisstart:thisstart+avgtests]
-        script = gen_shell_script(clustersuffix, clustertests, do_dist_img=False)
+        script = gen_shell_script(clustersuffix, clustertests, do_dist_img=True)
         print script
             
 
 def gen_shell_script(clustersuffix, testlist, do_dist_img):
-    base_str = "python ~/workdir/exp-script/lazy-build-from-ops.py"\
+    base_str = ""\
+        "python ~/workdir/exp-script/lazy-build-from-ops.py"\
         " git nopatches {commit} 0-7 {clustersuffix} notusefinished {distr_image}download,checkout,"\
         "patch,make_oldconfig,make_kernel,tar_src,pull_src_tar,"\
         "untar_src,install_kernel,set_default_kernel,reboot,wait_for_alive,"\
         "never_writeback,check_current_version,clean,run_exp"
     script = ""
     for i,test in enumerate(testlist):
-        print test
+        #print test
         commit = test['commithash']
         if i == 0 and do_dist_img == True:
             distr_image = 'distribute_images,'
@@ -78,7 +79,7 @@ def gen_shell_script(clustersuffix, testlist, do_dist_img):
         mystr = base_str.format(commit         =commit,
                                 clustersuffix  =clustersuffix,
                                 distr_image    =distr_image)
-        script += mystr + '; '
+        script += mystr
 
     return script
 
@@ -133,19 +134,19 @@ def main():
     #testlist = test_what(0, len(commitlist)-1, commitlist, 5) 
     testlist = test_what(0, 25, commitlist, 9) 
     pprint.pprint(testlist)
-    assign_job([
-        'noloop001.plfs',
-        'noloop002.plfs',
-        'noloop003.plfs',
-        'noloop004.plfs',
-        'noloop005.plfs',
-        'noloop006.plfs',
-        'noloop007.plfs',
-        'noloop008.plfs',
-        ], testlist)
+    #assign_job([
+        #'noloop001.plfs',
+        #'noloop002.plfs',
+        #'noloop003.plfs',
+        #'noloop004.plfs',
+        #'noloop005.plfs',
+        #'noloop006.plfs',
+        #'noloop007.plfs',
+        #'noloop008.plfs',
+        #], testlist)
     #print gen_agga_check_cmd(testlist)
     #print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
-    #print gen_plot_strings(testlist)
+    print gen_plot_strings(testlist)
 
 
 if __name__ == '__main__':
