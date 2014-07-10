@@ -9,7 +9,7 @@ def load_commits():
     commitlist = f.readlines()
     f.close()
 
-    commitlist = [x.strip() for x in commitlist]
+    commitlist = [x.strip()[:10] for x in commitlist]
     return commitlist
 
 def test_what(start_index, end_index, commitlist, npartitions):
@@ -116,7 +116,7 @@ def gen_plot_strings(testlist):
     print '################ cmd for download'
     ssh_str = "scp jhe@marmot-ops.pdl.cmu.edu:"\
                 "./workdir/sensitivity-analysis/{rdatafile} "\
-                "/Users/junhe/workdir/curstage/analysis-scripts/datafiles && "
+                "/Users/junhe/workdir/curstage/analysis-scripts/datafiles ; "
     downloadstr = ""
     for file in files:
         cmd = ssh_str.format(rdatafile=file)
@@ -132,11 +132,14 @@ def gen_plot_strings(testlist):
 def main():
     commitlist = load_commits()
     #testlist = test_what(0, len(commitlist)-1, commitlist, 5) 
-    testlist = test_what(12, 14, commitlist, 3) 
+    testlist = test_what(11, 14, commitlist, 5) 
     pprint.pprint(testlist)
     #assign_job([
-        #'noloop001.plfs',
-        #'noloop002.plfs'], testlist)
+        #'noloop003.plfs',
+        #'noloop004.plfs',
+        #'noloop005.plfs',
+        #'noloop006.plfs'
+        #], testlist)
     #print gen_agga_check_cmd(testlist)
     #print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
     print gen_plot_strings(testlist)
