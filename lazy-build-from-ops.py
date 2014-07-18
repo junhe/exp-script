@@ -361,19 +361,32 @@ def get_kernelrelease(nodelist, clustersuffix):
 
 
 def set_default_kernel(version, nodelist, clustersuffix):
-    releasename = get_kernelrelease(nodelist, clustersuffix)
+    if version == 'git':
+        releasename = get_kernelrelease(nodelist, clustersuffix)
 
-    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
-            nodelist, '.'+clustersuffix,
-            "sudo python /users/jhe/bin/set-default-kernel.py "+
-                releasename,
-            'async']
-    print cmd
-    ret = subprocess.call(cmd)
-    if ret != 0:
-        print 'error at set_default_kernel'
-        exit(1)
+        cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+                nodelist, '.'+clustersuffix,
+                "sudo python /users/jhe/bin/set-default-kernel.py "+
+                    releasename,
+                'async']
+        print cmd
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            print 'error at set_default_kernel'
+            exit(1)
+    else:
+        tar_version = get_tar_version(version)
+        releasename = get_releasename(version)
 
+        cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+                nodelist, '.'+clustersuffix,
+                "sudo python /users/jhe/bin/set-default-kernel.py "+
+                    releasename,
+                'async']
+        print cmd
+        ret = subprocess.call(cmd)
+        if ret != 0:
+            print 'error at set_default_kernel'
 
 def reboot(nodelist, clustersuffix):
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',

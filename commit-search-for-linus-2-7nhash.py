@@ -140,9 +140,9 @@ def main():
         #'noloop005.plfs',
         #'noloop006.plfs'
         #], testlist)
-    #print gen_agga_check_cmd(testlist)
+    print gen_agga_check_cmd(testlist)
     #print gen_analysis_cmd('0-7', 'noloop001.plfs', testlist)
-    print gen_plot_strings(testlist)
+    #print gen_plot_strings(testlist)
 
 
 if __name__ == '__main__':

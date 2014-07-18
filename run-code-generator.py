@@ -64,7 +64,7 @@ def assign_job(clusters, testlist, distr_image):
 def gen_shell_script(version, patches, jobtag, clustersuffix, do_dist_img):
     base_str = ""\
         "python ~/workdir/exp-script/lazy-build-from-ops.py"\
-        " {version} {patches} {jobtag} 0-7 {clustersuffix} notusefinished {distr_image}download,checkout,"\
+        " {version} {patches} {jobtag} 0-7 {clustersuffix} notusefinished {distr_image}download,"\
         "patch,make_oldconfig,make_kernel,tar_src,pull_src_tar,"\
         "untar_src,install_kernel,set_default_kernel,reboot,wait_for_alive,"\
         "never_writeback,check_current_version,clean,run_exp"
@@ -135,14 +135,14 @@ def gen_plot_strings(version, jobtag):
 
 
 def main():
-    clusters = ['noloop001.plfs', 'noloop002.plfs']
-    jobtags  = ['samerun01', 'samerun02']
+    clusters = ['noloop001.plfs']
+    jobtags  = ['smallonefile']
 
     analysiscluster = 'anacluster'
     analysisnodes = '0-3'
 
     version = '3.12.5'
-    patches = 'percpu0-for-3.12.5.patch'
+    patches = 'nopatches'
     do_dist_img = True
 
     for clustersuffix, jobtag in zip(clusters, jobtags): 
