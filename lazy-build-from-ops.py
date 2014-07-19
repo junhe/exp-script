@@ -450,6 +450,18 @@ def check_current_version(nodelist, clustersuffix):
         print 'error at check_current_version'
         exit(1)
 
+def insmod(version, nodelist, clustersuffix):
+    if version != '3.12.5':
+        print 'insmod() only handles 3.12.5'
+    cmd = ['python', '/users/jhe/bin/runall.ssh.py',
+            nodelist, '.'+clustersuffix,
+            'sudo insmod /users/jhe/workdir/dloop/loop.ko.3.12.5.vanilla', 'sync']
+    print cmd
+    ret = subprocess.call(cmd)
+    if ret != 0:
+        print 'error at check_current_version'
+        exit(1)
+
 def clean(nodelist, clustersuffix):
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nodelist, '.'+clustersuffix,
@@ -588,6 +600,8 @@ def main():
         never_writeback(nodelist, clustersuffix)
     if 'check_current_version' in funclist:
         check_current_version(nodelist, clustersuffix)
+    if 'insmod' in funclist:
+        insmod(version, nodelist, clustersuffix)
     if 'clean' in funclist:
         clean(nodelist, clustersuffix)
     if 'run_exp' in funclist:
