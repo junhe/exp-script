@@ -66,11 +66,14 @@ def do_debugfs(dev, subcmd):
 
     cmd = ['debugfs', dev, '-w', '-R', ' '.join(subcmd)]
     print cmd
-    ret = subprocess.call(cmd)
-    if ret != 0:
+    proc = subprocess.Popen(cmd, 
+                    stdin =subprocess.PIPE,    
+                    stdout=subprocess.PIPE)
+    proc.wait()
+    if proc.returncode != 0:
         print 'error doing debugfs'
         exit(1)
-    return
+    return proc
 
 def do_set_inode_field(dev, filespec, field, value):
     cmd = ['set_inode_field',
@@ -79,11 +82,47 @@ def do_set_inode_field(dev, filespec, field, value):
            value]
     do_debugfs(dev, cmd)
 
+def is_block_in_use(dev, block, count):
+    "test if any block in block,count is in use"
+    subcmd = ['testb', block, count]
+    subcmd = [str(x) for x in subcmd]
 
+    cmd = ['debugfs', dev, '-w', '-R', ' '.join(subcmd)]
+    print cmd
+    proc = subprocess.Popen(cmd,
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE)
+    proc.wait()
 
+    for line in proc.stdout:
+        if "marked in use" in line:
+            return True
+    return False
 
+def is_extent_in_use(dev, ext):
+    return is_block_in_use(dev, 
+                           ext['physical_block_num'],
+                           ext['length'])
 
+def is_extentlist_is_use(dev, extlist):
+    for ext in extlist:
+        if is_extent_in_use(dev, ext):
+            print ext, 'is in use'
+            return True
+    return False
 
+def setb(dev, block, count):
+    cmd = ['setb', block, count]
+    proc = do_debugfs(dev, cmd)
+    print proc.communicate()[0]
+    return proc.returncode
+
+def set_ext_as_used(dev, ext):
+    return setb(dev, ext['physical_block_num'], ext['length'])
+
+def set_extlist_as_used(dev, extlist):
+    for ext in extlist:
+        set_ext_as_used(dev, ext)
 
 def set_iblocks(dev, filespec, extlist):
     """
@@ -157,20 +196,41 @@ def set_iblocks(dev, filespec, extlist):
                             stdout=subprocess.PIPE)
     proc.communicate(input=fieldstr)
     proc.wait()
+    
+    if proc.returncode == 0:
+        print 'iblocks are set'
+    else:
+        print 'failed to set iblocks'
+        exit(1)
+
+def remount_dev(dev, mountpoint):
+    "sudo umount /dev/loop0 && sudo mount /dev/loop0 /mnt/scratch"
+    cmd = ['umount', dev]
+    subprocess.call(cmd)
+
+    cmd = ['mount', dev, mountpoint]
+    subprocess.call(cmd)
+
 
 def main():
-
     # create file
     cmd = ['touch', '/mnt/scratch/myfile']
     subprocess.call(cmd)
     subprocess.call('sync')
 
+    dev = '/dev/loop0'
+    mountpoint = '/mnt/scratch'
     args = [2,
-            0,1,65539,
-            1,1,65540]
+            0,1,65535,
+            1,1,65550]
     extlist = create_extent_list(args) 
+    if is_extentlist_is_use(dev, extlist):
+        print 'a requested extent is not free'
+        exit(1)
+    set_extlist_as_used(dev, extlist)
     
-    set_iblocks('/dev/loop0', 'myfile', extlist)
+    set_iblocks(dev, 'myfile', extlist)
+    remount_dev(dev, mountpoint)
 
 if __name__ == '__main__':
     main()
