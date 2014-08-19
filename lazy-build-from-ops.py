@@ -39,7 +39,7 @@ def distribute_images(nodelist, clustersuffix):
     cmd = ['ssh', 'h0.'+clustersuffix,
            'bash', '-c',
            '"rsync -a ' +
-           '/users/jhe/Home2/tars/imgs-3.0.0/* /mnt/scratch-sda4/"']
+           '/users/jhe/Home2/tars/imgs-3.12.5/* /mnt/scratch-sda4/"']
     print cmd
     ret = subprocess.call(cmd)
     if ret != 0:
@@ -453,6 +453,7 @@ def check_current_version(nodelist, clustersuffix):
 def insmod(version, nodelist, clustersuffix):
     if version != '3.12.5':
         print 'insmod() only handles 3.12.5'
+        exit(1)
     cmd = ['python', '/users/jhe/bin/runall.ssh.py',
             nodelist, '.'+clustersuffix,
             'sudo insmod /users/jhe/workdir/dloop/loop.ko.3.12.5.vanilla', 'sync']

@@ -135,8 +135,8 @@ def gen_plot_strings(version, jobtag):
 
 
 def main():
-    clusters = ['noloop001.plfs']
-    jobtags  = ['smallonefile']
+    clusters = ['noloop003.plfs']
+    jobtags  = ['paperspace']
 
     analysiscluster = 'anacluster'
     analysisnodes = '0-3'
