@@ -51,6 +51,8 @@ int writefile(char *fpath, int fsize)
     int fd;
     char buf[BLOCKSIZE];
 
+    memset(buf, 'z', BLOCKSIZE);
+
     fd = open(fpath, O_WRONLY|O_CREAT, 0666);
     if ( fd == -1 ) {
         perror("open file for writing");
@@ -71,8 +73,6 @@ int writefile(char *fpath, int fsize)
     return 0;
 }
 
-
-
 int main(int argc, char **argv)
 {
     char mode;
@@ -82,8 +82,9 @@ int main(int argc, char **argv)
     double dur;
     Performance perf;
 
-    if ( argc != 4 ) {
-        cout << "usage: ./me r|w filepath filesize" << endl;
+    if ( argc != 6 ) {
+        cout << "usage: ./me r|w filepath filesize addition-head additional-datarow" << endl;
+        cout << "example: ./perform w /tmp/myfile 1024 'hello hellodata' 'echo echodata'" << endl;
         exit(1);
     }
     
@@ -103,6 +104,7 @@ int main(int argc, char **argv)
     perf.put("duration", dur);
     perf.put("filesize", fsize);
     perf.put("mode", argv[1]);
+    perf.put(argv[4], argv[5]);
     cout << perf.showColumns();
 }
 
