@@ -3,6 +3,9 @@ import random
 import os
 import subprocess
 
+GROUPSIZE=128*(2**20)
+
+
 def get_quantile(objlist, ratio):
     """
     ratio: recommended [0,1), but you can do [0,1] (change the code)
@@ -297,24 +300,25 @@ def create_big_file():
 def get_block_list_humanpick():
     groupsize = 128*2**20
     ngroups = 14802+1 #2TB disk
-    distances = [(2**x)/4096 for x in range(12, 40, 4)] #in block
-    start = ((ngroups/2) * groupsize)/4096
+    distances = [(2**x)/4096 for x in range(28, 41, 1)] #in block
+    start = (1 * groupsize)/4096
     
     pairs = [[start, start+x] for x in distances]
     return pairs
 
-def get_block_list(npick):
+def get_block_list_uniform(npick, ngroups):
     groupsize = 128*2**20
     #disksize = 1909583652*1024 # 1.8TB
     #ngroups = disksize/(128*(2**20)) 
-    ngroups = 14802+1 #2TB disk
+    #ngroups = 14802+1 #2TB disk
     print 'ngroups', ngroups
 
-    exps = range(int(math.log(ngroups, 2)))
-    groups = [2**i for i in exps]
-    print 'groups',groups
+    #exps = range(int(math.log(ngroups, 2)))
+    #groups = [2**i for i in exps]
+    #print 'groups',groups
 
-    #groups = pick_k_objects(range(ngroups), npick)
+    groups = pick_k_objects(range(ngroups), npick)
+    #print 'groups picked', groups
     blocklist = [(groupno * groupsize + groupsize/2)/4096 
                     for groupno in groups]
     print blocklist
@@ -336,13 +340,14 @@ def get_block_random_pairs(npick):
     groupslist = range(ngroups)
     groups = [sorted(sample_with_replace(groupslist,2))
                 for i in range(npick)]
-    blockpairs = [[groupno_to_block(x),groupno_to_block(y)]
-                    for x,y in groups]
+    
+    blockpairs = []
+    for x,y in groups:
+        blockpairs.append([groupno_to_block(x),groupno_to_block(y)])
+        blockpairs.append([groupno_to_block(x),groupno_to_block(x)])
 
-    blockpairs2 = [[groupno_to_block(x),groupno_to_block(x)]
-                    for x,y in groups]
+    ret_pairs = blockpairs
 
-    ret_pairs = blockpairs + blockpairs2
     print ret_pairs
     return ret_pairs
 
@@ -433,8 +438,8 @@ def clean_all_cache(dev, mountpoint):
 
 def exp_main_pairs():
     #blocklist = get_block_pairs(16)
-    #blocklist = get_block_list_humanpick()
-    blocklist = get_block_random_pairs(1024)
+    blocklist = get_block_list_humanpick()
+    #blocklist = get_block_random_pairs(1024)
     dev = '/dev/sda4'
     mountpoint = '/mnt/scratch'
     filename = 'testfile'
@@ -482,14 +487,14 @@ def exp_main_pairs():
 
 
 def exp_main():
-    blocklist = get_block_list(16)
+    blocklist = get_block_list_uniform(128, ngroups=16*(2**30)/GROUPSIZE )
     dev = '/dev/sda4'
     mountpoint = '/mnt/scratch'
     filename = 'testfile'
 
 
-    for rep in range(4):
-        for size in [1, 4, 16, 64]:
+    for rep in range(5):
+        for size in [1]:
             ext_start = get_empty_ext()
             ext_start['logical_block_num'] = 0 
             ext_start['length'] = size
@@ -506,12 +511,15 @@ def exp_main():
 
                 create_file(dev, mountpoint, filename, extlist)
                 filefrag(os.path.join(mountpoint, filename))
-                
-                info = {'extsize':size,
-                        'nextents': len(extlist),
-                        'distance'   :extlist[-1]['physical_block_num'] -
-                            (extlist[0]['physical_block_num']+extlist[0]['length'])}
 
+                info = {'extsize':size,
+                    'nextents': len(extlist),
+                    'distance'   :extlist[-1]['physical_block_num'] -
+                        (extlist[0]['physical_block_num']+extlist[0]['length']),
+                    'startblock': extlist[0]['physical_block_num'],
+                    'endblock'  : extlist[-1]['physical_block_num']
+                    }
+                
                 filesize = get_ext_stat(extlist)['filesize']
                 run_exp('w', mountpoint, filename, filesize, info)
                 clean_all_cache(dev, mountpoint)
@@ -562,7 +570,7 @@ def exp_main_nextents():
 
 if __name__ == '__main__':
     #main()
-    #mkext4('/dev/sda4', '/mnt/scratch')
+    mkext4('/dev/sda4', '/mnt/scratch')
     #exp_main()
     #exp_main_nextents()
     #create_big_file()

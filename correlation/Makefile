@@ -15,6 +15,9 @@ convertor: convertor.o
 perform: perform.o Util.o
 	${CC} ${CFLAGS} ${INCLUDES} -o $@ Util.o perform.o ${LIBS}
 
+seqorrandom: seqorrandom.cpp Util.o
+	${CC} ${CFLAGS} ${INCLUDES} -o $@ Util.o seqorrandom.o ${LIBS}
+
 clean:
 	-rm -f *.o core *.core *.gch
 
