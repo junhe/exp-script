@@ -300,7 +300,8 @@ def create_big_file():
 def get_block_list_humanpick():
     groupsize = 128*2**20
     ngroups = 14802+1 #2TB disk
-    distances = [(2**x)/4096 for x in range(28, 41, 1)] #in block
+    #distances = [(2**x)/4096 for x in range(12, 41, 1)] #in block
+    distances = [ (14801)*128*(2**20)/4096 ]
     start = (1 * groupsize)/4096
     
     pairs = [[start, start+x] for x in distances]
@@ -570,7 +571,7 @@ def exp_main_nextents():
 
 if __name__ == '__main__':
     #main()
-    mkext4('/dev/sda4', '/mnt/scratch')
+    #mkext4('/dev/sda4', '/mnt/scratch')
     #exp_main()
     #exp_main_nextents()
     #create_big_file()
