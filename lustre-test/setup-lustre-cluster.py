@@ -18,7 +18,7 @@ def ssh_cmd(hostname, cmds):
 
 def setup_mds(mdt_dev):
     ssh_cmd(gethostname(0),
-            ['sudo', 'mkfs.lustre','--fsname=temp',
+            ['sudo', 'mkfs.lustre','--reformat','--fsname=temp',
                 '--mgs','--mdt','--index=0',mdt_dev])
     ssh_cmd(gethostname(0),
             ['sudo', 'mount', '-t', 'lustre', mdt_dev, '/mnt/mds1'])
@@ -27,7 +27,7 @@ def setup_oss(hostindex, ostindex, ost_dev):
     nodename = gethostname(hostindex)
     mgsnode  = gethostname(0)
     ssh_cmd(nodename,
-            ['sudo', 'mkfs.lustre','--fsname=temp',
+            ['sudo', 'mkfs.lustre','--reformat','--fsname=temp',
                 '--mgsnode='+mgsnode+'@tcp0', 
                 '--ost', '--index='+str(ostindex), ost_dev])
     ssh_cmd(nodename,
@@ -51,7 +51,7 @@ def built_lustre_cluster():
 
 def umount_lustre():
     #umount clients
-    ssh_cmd(gethostname(0)
+    ssh_cmd(gethostname(0),
             ['sudo','umount','/mnt/lustre'])
     for i in range(2):
         ssh_cmd(gethostname(i+1),
