@@ -1,7 +1,9 @@
 import subprocess
+import os
+import shlex
 
 pre='node'
-suf='-dib'
+suf=''
 lnetname='o2ib0'
 allnodes=[0,1,2,3,4,5,6]
 mdsnodes=[0]
@@ -17,9 +19,14 @@ def ssh_cmd(hostname, cmds):
     cmds = '"' + cmds + '"'
     c = ['ssh', hostname, 'bash', '-c', cmds]
     print ' '.join(c)
-    #return
+    return
     subprocess.call(c)
     return
+
+def cmd(cmds):
+    print ' '.join(cmds)
+    return
+    subprocess.call(cmds)
 
 def setup_mds(nodeindex, mdt_dev):
     #ssh_cmd(gethostname(nodeindex),
@@ -72,8 +79,6 @@ def built_lustre_cluster():
                 ['sudo', 'lfs', 'df', '-h'])
 
 
-
-
 def umount_lustre():
     #umount clients
     for nd in clientnodes:
@@ -88,7 +93,50 @@ def umount_lustre():
         ssh_cmd(gethostname(nd),
             ['sudo', 'lustre_rmmod'])
 
-built_lustre_cluster()
-#umount_lustre()
+
+def build_ceph():
+    # install ceph-deploy on admin-node
+    cmd(['sudo', 'yum', 'install', '-y', 'ceph-deploy'])
+    
+    #create new monitor node
+    cmd(['env CEPH_DEPLOY_TEST=YES ceph-deploy new', gethostname(1)])
+
+    #config ceph
+    if not os.path.exists('ceph.conf'):
+        print 'not in the right directory'
+        exit(1)
+    
+    with open('ceph.conf', 'a') as f:
+        f.write('osd pool default size = 2')
+
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy install node0 node1 node2 node3'))
+
+    cmd(shlex.split('env CEPH_DEPLOY_TEST=YES ceph-deploy mon create-initial'))    
+    
+    ssh_cmd(gethostname(2),
+            ['sudo mkdir /var/local/osd0'])
+    ssh_cmd(gethostname(3),
+            ['sudo mkdir /var/local/osd1'])
+
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy osd prepare '\
+        'node2:/var/local/osd0 node3:/var/local/osd1'))
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate '
+        'node2:/var/local/osd0 node3:/var/local/osd1'))
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy admin '
+        'node0 node1 node2 node3'))
+    cmd(shlex.split(
+        'sudo chmod +r /etc/ceph/ceph.client.admin.keyring'))
+
+    cmd(shlex.split(
+        'ceph health'))
+
+build_ceph()
+
+
+
 
 

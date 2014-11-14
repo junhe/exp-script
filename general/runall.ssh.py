@@ -5,21 +5,21 @@ import subprocess
 # this python program copy [filepath] to [destdir] on nodes
 
 # in file configuration
-prefix = 'h'
 #suffix = '.noloop.plfs'
 
-if len(sys.argv) != 5:
-    print "usage:", sys.argv[0], "nodes suffix 'cmd' sync/async"
+if len(sys.argv) != 6:
+    print "usage:", sys.argv[0], "nodes prefix suffix 'cmd' sync/async"
     print "the format of nodes is 0,2,.. or 1-10, or the mix"
     print "I don't do much checking, you'd better be reasonable"
     print "example:"
-    print " python runall.ssh.py 0-4 .noloop.plfs 'sleep 2' async"
+    print " python runall.ssh.py 0-4 h .noloop.plfs 'sleep 2' async"
     exit(1)
 
 nodes = sys.argv[1]
-suffix = sys.argv[2]
-bashcmd = sys.argv[3]
-syncmode = sys.argv[4]
+prefix = sys.argv[2]
+suffix = sys.argv[3]
+bashcmd = sys.argv[4]
+syncmode = sys.argv[5]
 
 def generate_node_names(prefix, suffix, nodestr):
     # get all node names

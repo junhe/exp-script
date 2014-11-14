@@ -1,9 +1,12 @@
 #!/bin/bash
+
+#do the following first
+#modprobe lnet_selftest
 export LST_SESSION=$$
 lst new_session read/write
-lst add_group servers 10.51.1.15@tcp0
-lst add_group readers 10.51.1.15@tcp0
-lst add_group writers 10.51.1.15@tcp0
+lst add_group servers node0-dib@o2ib0
+lst add_group readers node0-dib@o2ib0
+lst add_group writers node0-dib@o2ib0
 lst add_batch bulk_rw
 lst add_test --batch bulk_rw --from readers --to servers \
 brw read check=simple size=1M
