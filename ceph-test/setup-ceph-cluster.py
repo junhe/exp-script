@@ -1,3 +1,5 @@
+import optparse
+import sys
 import subprocess
 import os
 import shlex
@@ -10,23 +12,42 @@ mdsnodes=[0]
 ossnodes=[1,2]
 clientnodes=[3,4,5,6]
 
+
+parser = optparse.OptionParser()
+parser.add_option('--showonly', action='store_true', default=False)
+opts = parser.parse_args(sys.argv[1:])[0]
+
 def gethostname(index):
     return pre+str(index)+suf
 
-def ssh_cmd(hostname, cmds):
+def ssh_cmd(hostname, cmds, wrapper='"'):
     cmds = [str(x) for x in cmds]
     cmds = ' '.join(cmds)
-    cmds = '"' + cmds + '"'
+    cmds = wrapper + cmds + wrapper
     c = ['ssh', hostname, 'bash', '-c', cmds]
     print ' '.join(c)
-    return
-    subprocess.call(c)
+    print c
+
+    if opts.showonly == True:
+        return
+
+    ret = subprocess.call(c)
+    if ret != 0:
+        print 'error when executing:', ' '.join(c)
+        exit(1)
     return
 
 def cmd(cmds):
     print ' '.join(cmds)
-    return
-    subprocess.call(cmds)
+
+    if opts.showonly == True:
+        return
+
+    ret = subprocess.call(cmds)
+    if ret != 0:
+        print 'error when executing:', ' '.join(cmds)
+        exit(1)
+    return  
 
 def setup_mds(nodeindex, mdt_dev):
     #ssh_cmd(gethostname(nodeindex),
@@ -95,36 +116,42 @@ def umount_lustre():
 
 
 def build_ceph():
-    # install ceph-deploy on admin-node
-    cmd(['sudo', 'yum', 'install', '-y', 'ceph-deploy'])
+    # set sudoers
+    #for i in [0,1,2,3]:
+        #ssh_cmd(gethostname(i),
+                #['echo Defaults env_keep = \\\"http_proxy https_proxy ftp_proxy\\\"|sudo tee -a /etc/sudoers'],
+                #wrapper="'")
+
+    ## install ceph-deploy on admin-node
+    #cmd(['sudo', 'yum', 'install', '-y', 'ceph-deploy'])
     
-    #create new monitor node
-    cmd(['env CEPH_DEPLOY_TEST=YES ceph-deploy new', gethostname(1)])
+    ##create new monitor node
+    #cmd(['env', 'CEPH_DEPLOY_TEST=YES', 'ceph-deploy', 'new', gethostname(1)])
 
-    #config ceph
-    if not os.path.exists('ceph.conf'):
-        print 'not in the right directory'
-        exit(1)
+    ##config ceph
+    #if not os.path.exists('ceph.conf'):
+        #print 'not in the right directory'
+        #exit(1)
     
-    with open('ceph.conf', 'a') as f:
-        f.write('osd pool default size = 2')
+    #with open('ceph.conf', 'a') as f:
+        #f.write('osd pool default size = 2')
 
-    cmd(shlex.split(
-        'env CEPH_DEPLOY_TEST=YES ceph-deploy install node0 node1 node2 node3'))
+    #cmd(shlex.split(
+        #'env CEPH_DEPLOY_TEST=YES ceph-deploy install node0 node1 node2 node3'))
 
-    cmd(shlex.split('env CEPH_DEPLOY_TEST=YES ceph-deploy mon create-initial'))    
+    #cmd(shlex.split('env CEPH_DEPLOY_TEST=YES ceph-deploy mon create-initial'))    
     
-    ssh_cmd(gethostname(2),
-            ['sudo mkdir /var/local/osd0'])
-    ssh_cmd(gethostname(3),
-            ['sudo mkdir /var/local/osd1'])
+    #ssh_cmd(gethostname(2),
+            #['sudo mkdir /var/local/osd0'])
+    #ssh_cmd(gethostname(3),
+            #['sudo mkdir /var/local/osd1'])
 
-    cmd(shlex.split(
-        'env CEPH_DEPLOY_TEST=YES ceph-deploy osd prepare '\
-        'node2:/var/local/osd0 node3:/var/local/osd1'))
-    cmd(shlex.split(
-        'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate '
-        'node2:/var/local/osd0 node3:/var/local/osd1'))
+    #cmd(shlex.split(
+        #'env CEPH_DEPLOY_TEST=YES ceph-deploy osd prepare '\
+        #'node2:/var/local/osd0 node3:/var/local/osd1'))
+    #cmd(shlex.split(
+        #'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate '
+        #'node2:/var/local/osd0 node3:/var/local/osd1'))
     cmd(shlex.split(
         'env CEPH_DEPLOY_TEST=YES ceph-deploy admin '
         'node0 node1 node2 node3'))
@@ -134,9 +161,9 @@ def build_ceph():
     cmd(shlex.split(
         'ceph health'))
 
-build_ceph()
+def main():
+    build_ceph()
 
-
-
-
+if __name__ == '__main__':
+    main()
 
