@@ -121,42 +121,46 @@ def build_ceph():
         #ssh_cmd(gethostname(i),
                 #['echo Defaults env_keep = \\\"http_proxy https_proxy ftp_proxy\\\"|sudo tee -a /etc/sudoers'],
                 #wrapper="'")
+    #return
 
-    ## install ceph-deploy on admin-node
-    #cmd(['sudo', 'yum', 'install', '-y', 'ceph-deploy'])
+    #install ceph-deploy on admin-node
+    cmd(['sudo', 'yum', 'install', '-y', 'ceph-deploy'])
     
-    ##create new monitor node
-    #cmd(['env', 'CEPH_DEPLOY_TEST=YES', 'ceph-deploy', 'new', gethostname(1)])
+    #create new monitor node
+    cmd(['env', 'CEPH_DEPLOY_TEST=YES', 'ceph-deploy', 'new', gethostname(1)])
 
-    ##config ceph
-    #if not os.path.exists('ceph.conf'):
-        #print 'not in the right directory'
-        #exit(1)
+    #config ceph
+    if not os.path.exists('ceph.conf'):
+        print 'not in the right directory'
+        exit(1)
     
-    #with open('ceph.conf', 'a') as f:
-        #f.write('osd pool default size = 2')
+    with open('ceph.conf', 'a') as f:
+        f.write('osd pool default size = 2')
 
-    #cmd(shlex.split(
-        #'env CEPH_DEPLOY_TEST=YES ceph-deploy install node0 node1 node2 node3'))
-
-    #cmd(shlex.split('env CEPH_DEPLOY_TEST=YES ceph-deploy mon create-initial'))    
-    
-    #ssh_cmd(gethostname(2),
-            #['sudo mkdir /var/local/osd0'])
-    #ssh_cmd(gethostname(3),
-            #['sudo mkdir /var/local/osd1'])
-
-    #cmd(shlex.split(
-        #'env CEPH_DEPLOY_TEST=YES ceph-deploy osd prepare '\
-        #'node2:/var/local/osd0 node3:/var/local/osd1'))
-    #cmd(shlex.split(
-        #'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate '
-        #'node2:/var/local/osd0 node3:/var/local/osd1'))
     cmd(shlex.split(
-        'env CEPH_DEPLOY_TEST=YES ceph-deploy admin '
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy install node0 node1 node2 node3'))
+
+    cmd(shlex.split('env CEPH_DEPLOY_TEST=YES ceph-deploy  --overwrite-conf mon create-initial'))    
+    
+    ssh_cmd(gethostname(2),
+            ['if [ ! -d /var/local/osd0 ]; then sudo mkdir /var/local/osd0; fi'])
+    ssh_cmd(gethostname(3),
+            ['if [ ! -d /var/local/osd1 ]; then sudo mkdir /var/local/osd1; fi'])
+
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy osd prepare '\
+        'node2:/var/local/osd0 node3:/var/local/osd1'))
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate '
+        'node2:/var/local/osd0 node3:/var/local/osd1'))
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy --overwrite-conf admin '
         'node0 node1 node2 node3'))
     cmd(shlex.split(
         'sudo chmod +r /etc/ceph/ceph.client.admin.keyring'))
+
+    cmd(shlex.split(
+        'sleep 4'))
 
     cmd(shlex.split(
         'ceph health'))
