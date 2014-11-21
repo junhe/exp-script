@@ -17,8 +17,8 @@ clientnodes=[3,4,5,6]
 parser = optparse.OptionParser()
 parser.add_option('--showonly', action='store_true', default=False)
 parser.add_option('--actions', action='store', dest='actions',
-        default='yuminstall,new,cephconf,install,mon,prepare,active,admin,health',
-        help   ='sudoers,yuminstall,new,cephconf,install,mon,prepare,active,admin,health')
+        default='yuminstall,new,cephconf,install,mon,prepare2,active2,admin,health',
+        help   ='sudoers,yuminstall,new,cephconf,install,mon,prepare2,active2,admin,health')
 opts = parser.parse_args(sys.argv[1:])[0]
 print opts
 time.sleep(2)
@@ -81,7 +81,7 @@ def build_ceph(action):
             exit(1)
         
         with open('ceph.conf', 'a') as f:
-            f.write('osd pool default size = 2')
+            f.write('osd pool default size = 2\n')
         return
 
     if action == 'install':
@@ -104,10 +104,30 @@ def build_ceph(action):
             'node2:/var/local/osd0 node3:/var/local/osd1'))
         return
 
+    if action == 'prepare2':
+        cmd(shlex.split(
+            'env CEPH_DEPLOY_TEST=YES ceph-deploy disk zap node2:sdb'))
+        cmd(shlex.split(
+            'env CEPH_DEPLOY_TEST=YES ceph-deploy osd prepare node2:sdb:/tmp/journal'))
+
+        cmd(shlex.split(
+            'env CEPH_DEPLOY_TEST=YES ceph-deploy disk zap node3:sdb'))
+        cmd(shlex.split(
+            'env CEPH_DEPLOY_TEST=YES ceph-deploy osd prepare node3:sdb:/tmp/journal'))
+        return
+
+
     if action == 'active':
         cmd(shlex.split(
             'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate '
             'node2:/var/local/osd0 node3:/var/local/osd1'))
+        return
+
+    if action == 'active2':
+        cmd(shlex.split(
+            'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate node2:sdb1:/tmp/journal'))
+        cmd(shlex.split(
+            'env CEPH_DEPLOY_TEST=YES ceph-deploy osd activate node3:sdb1:/tmp/journal'))
         return
 
     if action == 'admin':
