@@ -16,6 +16,8 @@ clientnodes=[3,4,5,6]
 
 parser = optparse.OptionParser()
 parser.add_option('--showonly', action='store_true', default=False)
+parser.add_option('--do', action='store', dest='do', default='ceph',
+        help='ceph or cephfs')
 parser.add_option('--actions', action='store', dest='actions',
         default='yuminstall,new,cephconf,install,mon,prepare2,active2,admin,health',
         help   ='sudoers,yuminstall,new,cephconf,install,mon,prepare2,active2,admin,health')
@@ -145,13 +147,40 @@ def build_ceph(action):
             'ceph health'))
         return
 
+    if action == 'addmeta':
+        cmd(shlex.split(
+            'env CEPH_DEPLOY_TEST=YES ceph-deploy mds create node1'))
+
     print 'action', action, 'not registered'
     exit(1)
 
+
+def deploy_cephfs():
+    cmd(shlex.split(
+        'env CEPH_DEPLOY_TEST=YES ceph-deploy install node4'))
+    cmd(shlex.split('ceph -s  -m node1 -k /etc/ceph/ceph.client.admin.keyring'))
+    key = None
+    with open('ceph.client.admin.keyring', 'r') as f:
+        for line in f:
+            if 'key' in line:
+                key = line.split()[2]
+    assert key != None
+    with open('admin.secret', 'w') as f:
+        f.write(key)
+
+    ssh_cmd(gethostname(4),
+            ['if [ ! -d /mnt/mycephfs ]; then sudo mkdir /mnt/mycephfs; fi'])
+    ssh_cmd(gethostname(4),
+            ['sudo mount -t ceph node1:6789:/ /mnt/mycephfs -o name=admin,secretfile='
+                '/users/jhe/workdir/exameta/exp-script/ceph-test/mycluster/admin.secret'])
+
+
 def main():
-    #build_ceph()
-    for x in opts.actions.split(','):
-        build_ceph(action=x)
+    if opts.do == 'ceph':
+        for x in opts.actions.split(','):
+            build_ceph(action=x)
+    elif opts.do == 'cephfs':
+        deploy_cephfs()
 
 if __name__ == '__main__':
     main()
