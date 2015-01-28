@@ -1,0 +1,4 @@
+shorthname=`python ~/getshorthostname.py`
+#export PS1="${debian_chroot:+($debian_chroot)}\u@\h:\w\$"
+export PS1="${debian_chroot:+($debian_chroot)}\u@${shorthname}:\w\$ "
+
